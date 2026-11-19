@@ -80,7 +80,7 @@ def render_catalog_page():
     if not filtered:
         st.markdown("""
         <div class="be-empty-state">
-            <div style="font-size: 2.2rem; margin-bottom: 0.6rem;">👓</div>
+            <div style="font-size: 2.2rem; margin-bottom: 0.6rem;"></div>
             <div style="font-weight: 700; font-size: 1.1rem; color: var(--be-text-primary);">Tidak ada frame yang cocok dengan filter</div>
             <div style="font-size: 0.85rem; color: var(--be-text-muted); margin-top: 0.3rem;">Coba ubah opsi filter bentuk wajah atau material Anda.</div>
         </div>
@@ -114,7 +114,7 @@ def render_product_card(prod: dict, is_recommended: bool = False):
         <!-- Frame Visual Sizing Graphic -->
         <div class="be-frame-visual">
             <div class="be-frame-icon-box">
-                <span class="be-frame-shape-icon">👓</span>
+                <span class="be-frame-shape-icon"></span>
                 <div class="be-frame-code">{prod['optical_code']}</div>
             </div>
             <div class="be-frame-dimension-pill">

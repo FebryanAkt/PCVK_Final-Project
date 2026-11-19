@@ -24,7 +24,7 @@ LABEL_ENCODER_PATH = MODELS_DIR / "label_encoder.joblib"
 # App Metadata
 APP_TITLE = "Face Shape & Vision Studio"
 APP_SUBTITLE = "Klasifikasi Bentuk Wajah Berbasis Landmark Geometris & Rekomendasi Kacamata"
-APP_ICON = "👓"
+APP_ICON = ""
 VERSION = "2.1.0"
 
 # Journal & Training Metadata

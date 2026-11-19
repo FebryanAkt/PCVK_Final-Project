@@ -1,28 +1,22 @@
 import streamlit as st
 import importlib
-from config import APP_TITLE, VERSION, JOURNAL_TITLE, JOURNAL_AUTHORS
+from config import APP_TITLE, JOURNAL_TITLE, JOURNAL_AUTHORS
 
 import pages_ui.home
 import pages_ui.face_shape_page
-import pages_ui.image_processing
-import pages_ui.computer_vision
 import pages_ui.webcam_test
 
 importlib.reload(pages_ui.home)
 importlib.reload(pages_ui.face_shape_page)
-importlib.reload(pages_ui.image_processing)
-importlib.reload(pages_ui.computer_vision)
 importlib.reload(pages_ui.webcam_test)
 
 from pages_ui.home import render_home_page
 from pages_ui.face_shape_page import render_face_shape_page
-from pages_ui.image_processing import render_image_processing_page
-from pages_ui.computer_vision import render_cv_page
 from pages_ui.webcam_test import render_webcam_page
 
 st.set_page_config(
     page_title="Face Shape AI & Vision Studio",
-    page_icon="👓",
+    page_icon="",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
@@ -382,29 +376,21 @@ header[data-testid="stHeader"], #MainMenu, footer {{
 # ═══════════════════════════════════════════════════════════════
 #  MINIMALIST TOP HEADER WITH THEME TOGGLE BUTTON
 # ═══════════════════════════════════════════════════════════════
-c_head, c_theme = st.columns([3.8, 1.4])
+c_head, c_theme = st.columns([4.2, 1.2])
 
 with c_head:
     st.markdown(f"""
     <div>
-        <div class="app-title">👓 Face Shape &amp; Vision Studio</div>
+        <div class="app-title"> Face Shape &amp; Vision Studio</div>
         <div class="app-subtitle">Implementasi Klasifikasi Bentuk Wajah Berbasis Landmark Geometris (Mehta &amp; Mahmoud)</div>
     </div>
     """, unsafe_allow_html=True)
 
 with c_theme:
     theme_btn_label = "☀️ Mode Terang" if is_dark else "🌙 Mode Gelap"
-    sub_col1, sub_col2 = st.columns([1.6, 1])
-    with sub_col1:
-        if st.button(theme_btn_label, key="theme_toggle_btn", use_container_width=True):
-            st.session_state.theme = "light" if is_dark else "dark"
-            st.rerun()
-    with sub_col2:
-        st.markdown(f"""
-        <div style="display: flex; gap: 0.3rem; margin-top: 0.3rem;">
-            <span class="app-badge">v{VERSION}</span>
-        </div>
-        """, unsafe_allow_html=True)
+    if st.button(theme_btn_label, key="theme_toggle_btn", use_container_width=True):
+        st.session_state.theme = "light" if is_dark else "dark"
+        st.rerun()
 
 st.markdown("<div style='height: 0.6rem; border-bottom: 1px solid var(--border); margin-bottom: 1rem;'></div>", unsafe_allow_html=True)
 
@@ -412,14 +398,12 @@ st.markdown("<div style='height: 0.6rem; border-bottom: 1px solid var(--border);
 #  NAVIGASI TABS
 # ═══════════════════════════════════════════════════════════════
 NAV_PAGES = [
-    ("🔬 Klasifikasi Wajah (Jurnal)", "face"),
-    ("📷 Uji Coba Webcam", "webcam"),
-    ("🖼️ Pengolahan Citra (PCD)", "pcd"),
-    ("🤖 Computer Vision", "cv"),
-    ("📖 Ringkasan Metodologi", "home")
+    (" Klasifikasi Wajah (Jurnal)", "face"),
+    (" Uji Coba Webcam", "webcam"),
+    (" Ringkasan Metodologi", "home")
 ]
 
-if "active_nav" not in st.session_state:
+if st.session_state.get("active_nav") not in ["face", "webcam", "home"]:
     st.session_state.active_nav = "face"
 
 nav_cols = st.columns(len(NAV_PAGES))
@@ -442,12 +426,10 @@ if current == "face":
     render_face_shape_page()
 elif current == "webcam":
     render_webcam_page()
-elif current == "pcd":
-    render_image_processing_page()
-elif current == "cv":
-    render_cv_page()
 elif current == "home":
     render_home_page()
+else:
+    render_face_shape_page()
 
 # ═══════════════════════════════════════════════════════════════
 #  CLEAN FOOTER

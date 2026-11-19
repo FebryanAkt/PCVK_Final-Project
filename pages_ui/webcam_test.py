@@ -1,8 +1,6 @@
 import streamlit as st
 import numpy as np
 from PIL import Image
-from utils.cv_helpers import apply_edge_detection, apply_threshold
-from utils.model_loader import VisionModelManager
 from utils.face_shape_analyzer import (
     analyze_face_shape_and_glasses,
     create_81_landmark_visualization,
@@ -24,33 +22,20 @@ def render_webcam_page():
     </div>
     """, unsafe_allow_html=True)
 
-    # ── Konfigurasi Pipeline Sederhana ────────────────────────
-    c_pipe, c_vis = st.columns([1.5, 1.5])
-    with c_pipe:
-        pipeline_mode = st.selectbox(
-            "Mode Analisis Kamera:",
+    # ── Konfigurasi Visualisasi Anotasi ───────────────────────
+    c_vis, c_conf = st.columns([2, 1])
+    with c_vis:
+        vis_mode = st.selectbox(
+            "Gaya Visualisasi Anotasi Wajah:",
             [
-                "81 Landmark Wajah & Rekomendasi Kacamata",
-                "Deteksi Tepi (Canny Edge)",
-                "Binarisasi Ambang (Thresholding)",
-                "MediaPipe Hand Landmarker"
+                "Kombinasi (81 Titik + Garis Jarak D1-D7)",
+                "81 Titik Landmark & Angka Indeks (Kuning & Merah)",
+                "Garis Jarak Geometris (D1 - D7)"
             ],
             index=0
         )
-
-    vis_mode = "Kombinasi (81 Titik + Garis Jarak D1-D7)"
-    min_conf = 0.5
-    if pipeline_mode == "81 Landmark Wajah & Rekomendasi Kacamata":
-        with c_vis:
-            vis_mode = st.selectbox(
-                "Gaya Visualisasi Anotasi Wajah:",
-                [
-                    "81 Titik Landmark & Angka Indeks (Kuning & Merah)",
-                    "Garis Jarak Geometris (D1 - D7)",
-                    "Kombinasi (81 Titik + Garis Jarak D1-D7)"
-                ],
-                index=0
-            )
+    with c_conf:
+        min_conf = st.slider("Confidence Min:", 0.1, 1.0, 0.5, step=0.05)
 
     # ── Jendela Kamera & Pratinjau ─────────────────────────────
     st.markdown('<div class="section-title">Pengambilan Citra Kamera</div>', unsafe_allow_html=True)
@@ -68,39 +53,22 @@ def render_webcam_page():
             pil_img = Image.open(camera_photo)
             img_rgb = np.array(pil_img.convert("RGB"))
 
-            if pipeline_mode == "81 Landmark Wajah & Rekomendasi Kacamata":
-                with st.spinner("Mengekstrak landmark dan mengukur geometri wajah..."):
-                    annotated_default, res = analyze_face_shape_and_glasses(img_rgb, min_conf=min_conf)
+            with st.spinner("Mengekstrak landmark dan mengukur geometri wajah..."):
+                annotated_default, res = analyze_face_shape_and_glasses(img_rgb, min_conf=min_conf)
 
-                if annotated_default is None:
-                    st.warning(f"Keterangan sistem: {res}")
-                    st.image(img_rgb, caption="Citra Kamera Asli", use_container_width=True)
+            if annotated_default is None:
+                st.warning(f"Keterangan sistem: {res}")
+                st.image(img_rgb, caption="Citra Kamera Asli", use_container_width=True)
+            else:
+                if "Angka Indeks" in vis_mode:
+                    display_img = create_81_landmark_visualization(img_rgb, res["points_81"])
+                elif "Garis Jarak" in vis_mode:
+                    display_img = create_geometric_visualization(img_rgb, res["points_81"])
                 else:
-                    if "Angka Indeks" in vis_mode:
-                        display_img = create_81_landmark_visualization(img_rgb, res["points_81"])
-                    elif "Garis Jarak" in vis_mode:
-                        display_img = create_geometric_visualization(img_rgb, res["points_81"])
-                    else:
-                        display_img = create_combined_visualization(img_rgb, res["points_81"])
+                    display_img = create_combined_visualization(img_rgb, res["points_81"])
 
-                    st.image(display_img, caption="Hasil Anotasi Geometri Wajah", use_container_width=True)
-                    st.success("✓ Wajah berhasil terdeteksi dan dianalisis.")
-
-            elif pipeline_mode == "Deteksi Tepi (Canny Edge)":
-                edges = apply_edge_detection(img_rgb, "Canny", 100, 200)
-                st.image(edges, caption="Hasil Canny Edge Detection", use_container_width=True)
-
-            elif pipeline_mode == "Binarisasi Ambang (Thresholding)":
-                bin_img = apply_threshold(img_rgb, "Binary", 128)
-                st.image(bin_img, caption="Hasil Binarisasi Citra", use_container_width=True)
-
-            elif pipeline_mode == "MediaPipe Hand Landmarker":
-                if VisionModelManager.is_hand_model_available():
-                    hand_res, h_info = VisionModelManager.detect_hand_landmarks(img_rgb)
-                    st.image(hand_res, caption=f"Hand Landmarker ({h_info.get('hands_detected', 0)} Tangan)", use_container_width=True)
-                else:
-                    st.error("Model hand_landmarker.task tidak ditemukan.")
-
+                st.image(display_img, caption="Hasil Anotasi Geometri Wajah", use_container_width=True)
+                st.success("✓ Wajah berhasil terdeteksi dan dianalisis.")
         else:
             st.markdown("""
             <div class="clean-card" style="text-align: center; padding: 3rem 1.5rem; color: var(--text-muted);">
@@ -115,7 +83,7 @@ def render_webcam_page():
             """, unsafe_allow_html=True)
 
     # ── Hasil Detail Jika Snapshot Berhasil ────────────────────
-    if camera_photo is not None and pipeline_mode == "81 Landmark Wajah & Rekomendasi Kacamata" and annotated_default is not None:
+    if camera_photo is not None and annotated_default is not None and res is not None and isinstance(res, dict):
         gl = res["glasses"]
         pred_shape = res["predicted_shape"]
         prob = res["probabilities"].get(pred_shape, 0.0)
